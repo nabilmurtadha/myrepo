@@ -2,7 +2,8 @@
 title: "Test drive R Markdown"
 author: "Nabil Murtadha"
 date: "04/07/2021"
-output: html_document
+output: github_document
+
 ---
 
 ```{r setup, include=FALSE}

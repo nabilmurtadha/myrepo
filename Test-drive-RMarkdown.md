@@ -22,6 +22,12 @@ Nabil Murtadha
     ## [1] 8
 
 ``` r
+4 + 3
+```
+
+    ## [1] 7
+
+``` r
 print("Hello World")
 ```
 

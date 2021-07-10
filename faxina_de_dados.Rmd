@@ -1,0 +1,69 @@
+---
+title: "Faxina de dados"
+subtitle: "Curso-r"
+output: html_notebook
+---
+
+**Faxina de dados:** Modificar tabelas que atendam o princípio **tidy**. A faxina é importante pois dados são subprodutos de um processo muito mais complexos como entrevistas, registros administrativos e etc, e não estao em formato _tidy_.
+
+**Principios tidy:**
+
+1. Cada observação é uma linha, somente, da tabela.
+
+2. Cada variável é representada apenas por uma coluna da tabela.
+
+3. Não existe colunas com classe trocadas: ex- número em texto.
+
+4. As lacunas da base não é um valor faltante.
+
+Geralmente os dados brutos não são em _tidy_ pois esse formato nào otimiza espaço no computador e também não são o melhor formato para fazer buscas nos dados. Portanto, os dados brutos são _untidy_ por bons motivos.
+
+**Problemas mais comuns na transformação pra tidy**
+
+*Uma única variavel separada em várias colunas: Como solução pode-se tranformar várias colunas em uma e empilhar linhas. (`tidy::pivot_longer`)
+
+*Informação espalhada em várias tabelas: Como solução pode-se juntar as tabelas pelo valor de uma coluna. (`dployr::xxx_join`)
+
+*Variáveis diferentes empilhadas como linhas: Como solução pode-se transformar as linhas repetidas em colunas. (`tidyr::pivot_wider`)
+
+*Uma tabela fruto de muitos joins: Como solução pode-se separar as subtabelas e transformar informações repetidas em um única cela. (`tidyr::nest() - tidyr::unnest() - dplyr::group_by() + dplyr::summarise()`)
+
+**Organização de projetos**
+
+O `Curso-R` recomenta utilizar a estrutura de *pacotes* por que:
+
+* Não precisa se preocupar com a organização de pastas
+
+* Mais fácil de transferir para outras pessoas
+
+* Utilização de ferramentas úteis como `{usethis}` e `{devtools}`
+
+**Faxina de dados em pacotes**
+
+* A parte de faxina de dados de um pacote fica na pasta `data-raw/`
+
+* É facilitado pela função `usethis::use_data_raw()`
+
+* Depois de arrumados, salvos na pasta `\data` e podemos chamar os dados pela fução `usethis::use_data(dados_arrumados)`
+
+Esse é um modo básico de organização. Outra sugestão do `Curso-R` é colocar prefixos nos arquivos que represente o passo-a-passo como: `01-download.R, 02-leitura.R, 03-limpeza.R, 04-preparacao-modelagem.R`. O pacote `{targets}` pode auxiliar na organização também.
+
+**Cuidados com dados grandes**
+
+Dados grandes e Github não são amigos, evite sempre colocar arquivo de mais de 20mb no repositório. Pode até guardar arquivos grande no `data-raw`, mas coloque no `.gitignore` para não upar para o Github
+
+**Algumas alternativas para guardar dados brutos**
+
+* Servidor
+
+* Utilizadr git-lfs(avançado)
+
+* Utilizar pastas na nuvem (dropbox, drive etc)
+
+**Dicas práticas**
+
+* Salve resultados intermediários em arquivo `.rds`, são mais fáceis de transportar e não dão problema de leitura no R.
+
+* Se seu projeto envolve códigos de python, considera o formato `.feather`
+
+* Nomes expressivos ajudam. Salve-os com o mesmo nome ddo arquivo que gerou a base de dados.

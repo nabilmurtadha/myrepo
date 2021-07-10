@@ -1,6 +1,6 @@
 ---
 title: "Faxina de dados"
-subtitle: Curso-r
+subtitle: "Curso-r"
 output: html_notebook
 ---
 

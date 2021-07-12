@@ -1,0 +1,127 @@
+---
+title: "Exercicio 1 - Faxina de dados"
+subtitle: "Curso-R"
+output: html_notebook
+---
+
+O exercicio 1 do curso de Faxina de dados oferecido pelo `Curso-R` utiliza a base de dados dos Boletins de Ocorrencias do Estado de São Paulo emitidos no mês de março do ano de 2021.
+
+**Pacotes necessários**
+```{r pacotes, message=FALSE, warning=FALSE, include=TRUE}
+library(magrittr)
+library(ggplot2)
+library(tidyverse)
+```
+
+**Carregando a base**
+```{r base, message=FALSE, warning=FALSE, error=FALSE}
+base_bruta <- read.delim(
+  "Faxina de dados/dados/DadosBO_2021_3(ROUBO DE CELULAR).xls",
+  fileEncoding = "UTF-16LE",
+  sep = "\t",
+  header = TRUE,
+  stringsAsFactors = FALSE
+)
+```
+
+Vamos agora transformar a base bruta em tidy, ou seja, as colunas representam as variáveis de interesse e cada linha representa uma observação única.
+
+```{r analise, message=FALSE, warning=FALSE, error=FALSE, include=TRUE}
+
+# primeiramente transformaremos o data.frame em tibble para manipulação
+base_bruta <- tibble::as_tibble(base_bruta)
+
+# padronizar nomes da coluna e criar uma nova tibble para manipulação
+base_intermediaria <-  base_bruta %>%
+  janitor::clean_names() %>%
+  filter(!is.na(marca_celular), marca_celular != "") %>%
+  # considerarei ausencia de quantidade de celular como 1 unidade
+  replace_na(list(quant_celular = 1))
+
+# Semelhante ao exemplo do curso vou separar em três categorias e depois uni-las. Utilizando as colunas num_bo, ano_bo, delegacia_nome como chave.
+
+# ocorrencias unicas
+ocorrencias <- base_intermediaria %>%
+  # arrumando long e lag
+  mutate(
+  across(c(latitude,longitude), parse_number, locale = locale(decimal_mark = ","))) %>%
+  # selecionando var
+  select(ano_bo:delegacia_circunscricao) %>%
+  distinct()
+
+# celular 
+celular <- base_intermediaria %>%
+  select(
+    #chave
+    num_bo, ano_bo, delegacia_nome,
+    # celular
+    quant_celular, marca_celular) %>%
+  distinct()
+
+  
+# caracteristicas roubo
+roubos_celulares <- base_intermediaria %>%
+         # Chave
+  select(num_bo, ano_bo, delegacia_nome,
+         # crime
+         especie,rubrica,desdobramento) %>%
+  distinct() %>%
+  unite(crime_completo, especie, rubrica, desdobramento, sep = "@@@")
+
+
+# Juntar caracteristicas para o mesmo num_bo
+
+tipo_roubo_ceululares <- roubos_celulares %>%
+  group_by(num_bo, ano_bo, delegacia_nome) %>%
+  summarise(todos_tipos = str_c(crime_completo, collapse = "\n"))
+
+
+# Juntando os data frame pro tidy final
+base_final <- celular %>%
+  left_join(ocorrencias, by = c("num_bo","ano_bo", "delegacia_nome")) %>%
+  left_join(tipo_roubo_ceululares, by = c("num_bo", "ano_bo", "delegacia_nome"))
+
+# padronizando marca do celular em capslock
+base_final <- base_final %>% mutate(marca_celular = str_to_upper(marca_celular))
+
+base_final <- base_final %>% mutate(marca_celular = case_when(
+  marca_celular == "SANSUNG"~"SAMSUNG",
+  marca_celular == "MOTOROLLA"~"MOTOROLA",
+  TRUE~marca_celular))
+
+```
+
+Agora que a base já está em tidy, ou seja, uma observação para cada roubo de celular. Vamos tentar plotar os locais mais comuns de roubo de celular no Estado de São Paulo.
+
+```{r plot, message=FALSE, warning=FALSE}
+library(geobr)
+library()
+
+celular_local <- base_final %>% 
+  select(latitude,longitude, quant_celular, marca_celular) %>%
+  filter(!is.na(latitude),
+         !is.na(longitude))
+
+
+sp <- read_micro_region(code_micro = "SP", year= 2020)
+
+ggplot() +
+  geom_sf(data=sp , fill = "white", size=.15, show.legend = FALSE) +
+  labs(subtitle="Roubo de celulares no Estado de São Paulo, março de 2021", size=8) +
+  theme_minimal()+
+  geom_point(data = celular_local, aes(x = longitude,
+                                       y = latitude,
+                                       color = factor(marca_celular)),
+             size = 1,
+             alpha = 0.3
+             )+
+  labs(x = "",
+       y = "",
+       color = "Marca do celular")+
+  theme(legend.key.size = unit(.5, 'cm'),
+        panel.grid = element_blank(),
+        axis.text = element_blank())
+
+```
+
+
